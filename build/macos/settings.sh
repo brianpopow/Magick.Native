@@ -13,3 +13,4 @@ export FONTCONFIG_OPTIONS="--with-add-fonts=/System/Library/Fonts,/Library/Fonts
 export LIBXML_OPTIONS="--with-iconv=/usr/local/opt/libiconv"
 export WEBP_OPTIONS="--enable-libwebpmux --enable-libwebpdemux"
 export IMAGEMAGICK_OPTIONS=""
+export CROSS_COMPILE_FLAGS=""
