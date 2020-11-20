@@ -3,7 +3,7 @@ set -e
 
 apt-get update -y
 
-apt-get install -y autoconf git gperf libtool nasm pkg-config python python-pip python3-pip ragel
+apt-get install -y autoconf git gperf libtool nasm pkg-config python python-pip python3-pip ragel libltdl-dev
 
 pip3 install cmake
 pip3 install meson==0.55.3
