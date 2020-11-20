@@ -12,3 +12,4 @@
 **/tools/*
 .vs
 .vscode
+.idea
