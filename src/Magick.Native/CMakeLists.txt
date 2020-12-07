@@ -57,11 +57,11 @@ target_link_libraries(
     ${LIBOPENEXR}
     ${LIBICONV}
     ${LIBINTL}
-    ${LIBLQR}
-    ${LIBRSVG}
-    ${LIBPANGO}
+    #${LIBLQR}
+    #${LIBRSVG}
+    #${LIBPANGO}
     ${LIBCAIRO}
-    ${LIBGLIB}
+    #${LIBGLIB}
     ${LIBFONTCONFIG}
     ${LIB_DIR}/libfreetype.a
     ${LIB_DIR}/libxml2.a
@@ -70,7 +70,7 @@ target_link_libraries(
     ${LIB_DIR}/libtiff.a
     ${LIBWEBP}
     ${LIB_DIR}/libwebp.a
-    ${LIB_DIR}/libopenjp2.a
+    #${LIB_DIR}/libopenjp2.a
     ${LIB_DIR}/liblcms2.a
     ${LIB_DIR}/libheif.a
     ${LIBAOM}
