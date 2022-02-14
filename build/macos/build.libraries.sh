@@ -4,6 +4,8 @@ set -e
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 . $SCRIPT_PATH/settings.sh
 
+export GTKDOCIZE=true
+
 $1/build.zlib.sh
 $1/build.libxml.sh
 $1/build.libpng.sh
@@ -29,3 +31,4 @@ $1/build.harfbuzz.sh
 $1/build.pango.sh
 $1/build.croco.sh
 $1/build.librsvg.sh
+$1/build.raqm.sh

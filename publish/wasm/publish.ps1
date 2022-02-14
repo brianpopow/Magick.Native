@@ -1,14 +1,5 @@
-# Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-#
-# Licensed under the ImageMagick License (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-#
-#   https://www.imagemagick.org/script/license.php
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the
-# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-# either express or implied. See the License for the specific language governing permissions
-# and limitations under the License.
+# Copyright Dirk Lemstra https://github.com/dlemstra/Magick.NET.
+# Licensed under the Apache License, Version 2.0.
 
 param (
     [parameter(mandatory=$true)][string]$destination
@@ -16,13 +7,9 @@ param (
 
 . $PSScriptRoot\..\..\tools\windows\utils.ps1
 
-function createNPMPackage($version, $destination)
+function createNpmPackage($now)
 {
-  $target = FullPath $destination
-  Remove-Item $target -Recurse -ErrorAction Ignore
-  [void](New-Item -ItemType directory -Path $target)
-
-  $info = $version.split('.')
+  $info = $now.split('.')
   $version = "0.$($info[0])$($info[1]).$($info[2])$($info[3])"
 
   $path = FullPath "publish\wasm\package.json"
@@ -35,9 +22,7 @@ function createNPMPackage($version, $destination)
   $dir = FullPath "publish\wasm\files"
   cd $dir
   & npm pack
-
-  Copy-Item "*.tgz" $target
 }
 
-$version = (Get-Date).ToUniversalTime().ToString("yyyy.MM.dd.HHmm")
-createNPMPackage $version $destination
+$now = (Get-Date).ToUniversalTime().ToString("yyyy.MM.dd.HHmm")
+createNpmPackage $now

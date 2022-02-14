@@ -1,14 +1,5 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 
 #include "Stdafx.h"
 #include "JpegOptimizer.h"
@@ -147,7 +138,7 @@ static void InitializeSource(j_decompress_ptr decompress_info)
   if (client_data->inputFileName != (const char *) NULL)
   {
     source->inputFile = fopen_utf8(client_data->inputFileName, "rb");
-    if (source->inputFile == (FILE*) NULL)
+    if (source->inputFile == (FILE *) NULL)
       ERREXIT(decompress_info, JERR_FILE_READ);
   }
   else
@@ -164,7 +155,7 @@ static inline boolean FillInputBuffer(j_decompress_ptr decompress_info)
   if (source->inputFile != (FILE *) NULL)
     source->manager.bytes_in_buffer = (size_t) fread(source->buffer, 1, MaxBufferExtent, source->inputFile);
   else
-    source->manager.bytes_in_buffer = (size_t) source->reader(source->buffer, MaxBufferExtent, (void*) NULL);
+    source->manager.bytes_in_buffer = (size_t) source->reader(source->buffer, MaxBufferExtent, (void *) NULL);
   if (source->manager.bytes_in_buffer == 0)
   {
     if (source->startOfBlob != FALSE)
@@ -197,12 +188,8 @@ static void SkipInputData(j_decompress_ptr decompress_info, long number_bytes)
   source->manager.bytes_in_buffer -= number_bytes;
 }
 
-static void TerminateSource(j_decompress_ptr decompress_info)
+static inline void CloseSourceFile(SourceManager *source)
 {
-  SourceManager
-    *source;
-
-  source = (SourceManager *) decompress_info->src;
   if (source->inputFile != (FILE *) NULL)
   {
     fclose(source->inputFile);
@@ -210,14 +197,23 @@ static void TerminateSource(j_decompress_ptr decompress_info)
   }
 }
 
-static SourceManager* CreateSourceManager(j_decompress_ptr decompress_info)
+static void TerminateSource(j_decompress_ptr decompress_info)
+{
+  SourceManager
+    *source;
+
+  source = (SourceManager *) decompress_info->src;
+  CloseSourceFile(source);
+}
+
+static SourceManager *CreateSourceManager(j_decompress_ptr decompress_info)
 {
   SourceManager
     *source;
 
   source = (SourceManager *) (*decompress_info->mem->alloc_small)
     ((j_common_ptr) decompress_info, JPOOL_IMAGE, sizeof(SourceManager));
-  if (source != (SourceManager*) NULL)
+  if (source != (SourceManager *) NULL)
   {
     source->buffer = (JOCTET *) (*decompress_info->mem->alloc_small)
       ((j_common_ptr) decompress_info, JPOOL_IMAGE, MaxBufferExtent * sizeof(JOCTET));
@@ -392,9 +388,9 @@ static inline int GetCharacter(j_decompress_ptr jpeg_info)
   return (int) GETJOCTET(*jpeg_info->src->next_input_byte++);
 }
 
-static inline Marker* FindMarker(ClientData *client_data, int code)
+static inline Marker *FindMarker(ClientData *client_data, int code)
 {
-  register ssize_t
+  ssize_t
     i;
 
   for (i = 0; i < (ssize_t) client_data->markers_count; i++)
@@ -403,20 +399,20 @@ static inline Marker* FindMarker(ClientData *client_data, int code)
       return client_data->markers[i];
   }
 
-  return (Marker*) NULL;
+  return (Marker *) NULL;
 }
 
-static inline Marker* CreateMarker(ClientData *client_data, int code)
+static inline Marker *CreateMarker(ClientData *client_data, int code)
 {
   Marker
     *marker;
 
   if (client_data->markers_count == MaxMarkers)
-    return (Marker*) NULL;
+    return (Marker *) NULL;
 
   marker = malloc(sizeof(*marker));
   if (marker == (Marker *) NULL)
-    return (Marker*) NULL;
+    return (Marker *) NULL;
 
   (void) memset(marker, 0, sizeof(*marker));
   marker->code = code;
@@ -437,10 +433,10 @@ static boolean ReadMarker(j_decompress_ptr jpeg_info)
   Marker
     *marker;
 
-  register ssize_t
+  ssize_t
     i;
 
-  register JOCTET
+  JOCTET
     *p;
 
   size_t
@@ -488,6 +484,9 @@ static boolean ReadMarker(j_decompress_ptr jpeg_info)
 
 static boolean ReadJpeg(j_decompress_ptr decompress_info, ClientData *client_data)
 {
+  boolean
+    status;
+
   SourceManager
     *source;
 
@@ -495,8 +494,8 @@ static boolean ReadJpeg(j_decompress_ptr decompress_info, ClientData *client_dat
 
   if (setjmp(client_data->error_recovery) != 0)
   {
-    if (source != (SourceManager *) NULL && source->inputFile != (FILE *) NULL)
-      fclose(source->inputFile);
+    if (source != (SourceManager *) NULL)
+      CloseSourceFile(source);
     return FALSE;
   }
 
@@ -532,14 +531,17 @@ static boolean ReadJpeg(j_decompress_ptr decompress_info, ClientData *client_dat
     (decompress_info->comp_info[2].h_samp_factor == 1) &&
     (decompress_info->comp_info[2].v_samp_factor == 1))
   {
-    return DecompressJpeg(decompress_info, client_data);
+    status = DecompressJpeg(decompress_info, client_data);
   }
   else
   {
     client_data->coefficients = jpeg_read_coefficients(decompress_info);
 
-    return client_data->coefficients == (jvirt_barray_ptr *) NULL ? FALSE : TRUE;
+    status = client_data->coefficients == (jvirt_barray_ptr *) NULL ? FALSE : TRUE;
   }
+
+  CloseSourceFile(source);
+  return(status);
 }
 
 static void InitializeDestination(j_compress_ptr compress_info)
@@ -560,7 +562,7 @@ static void InitializeDestination(j_compress_ptr compress_info)
   if (client_data->outputFileName != (const char *) NULL)
   {
     destination->outputFile = fopen_utf8(client_data->outputFileName, "wb");
-    if (destination->outputFile == (FILE*) NULL)
+    if (destination->outputFile == (FILE *) NULL)
       ERREXIT(compress_info, JERR_FILE_WRITE);
   }
   else
@@ -576,11 +578,20 @@ static boolean EmptyOutputBuffer(j_compress_ptr compress_info)
   if (destination->outputFile != (FILE *) NULL)
     destination->manager.free_in_buffer = fwrite((const char *) destination->buffer, 1, MaxBufferExtent, destination->outputFile);
   else
-    destination->manager.free_in_buffer = (size_t) destination->writer((unsigned char *) destination->buffer, MaxBufferExtent, (void*) NULL);
+    destination->manager.free_in_buffer = (size_t) destination->writer((unsigned char *) destination->buffer, MaxBufferExtent, (void *) NULL);
   if (destination->manager.free_in_buffer != MaxBufferExtent)
     ERREXIT(compress_info, JERR_FILE_WRITE);
   destination->manager.next_output_byte = destination->buffer;
   return TRUE;
+}
+
+static inline void CloseDestinationFile(DestinationManager *destination)
+{
+  if (destination->outputFile != (FILE *) NULL)
+  {
+    fclose(destination->outputFile);
+    destination->outputFile = (FILE *) NULL;
+  }
 }
 
 static void TerminateDestination(j_compress_ptr compress_info)
@@ -601,16 +612,12 @@ static void TerminateDestination(j_compress_ptr compress_info)
         ERREXIT(compress_info, JERR_FILE_WRITE);
     }
     else
-      destination->writer((unsigned char *) destination->buffer, count, (void*) NULL);
+      destination->writer((unsigned char *) destination->buffer, count, (void *) NULL);
   }
-  if (destination->outputFile != (FILE *) NULL)
-  {
-    fclose(destination->outputFile);
-    destination->outputFile = (FILE *) NULL;
-  }
+  CloseDestinationFile(destination);
 }
 
-static inline DestinationManager* CreateDestinationManager(j_compress_ptr compress_info)
+static inline DestinationManager *CreateDestinationManager(j_compress_ptr compress_info)
 {
   DestinationManager
     *destination;
@@ -618,7 +625,7 @@ static inline DestinationManager* CreateDestinationManager(j_compress_ptr compre
   destination = (DestinationManager *) NULL;
   compress_info->dest = (struct jpeg_destination_mgr *) (*compress_info->mem->alloc_small)
     ((j_common_ptr) compress_info, JPOOL_IMAGE, sizeof(DestinationManager));
-  if (compress_info->dest != (struct jpeg_destination_mgr *)NULL)
+  if (compress_info->dest != (struct jpeg_destination_mgr *) NULL)
   {
     destination = (DestinationManager *) compress_info->dest;
     destination->manager.init_destination = InitializeDestination;
@@ -632,7 +639,7 @@ static inline DestinationManager* CreateDestinationManager(j_compress_ptr compre
 
 static void WriteMarkers(j_compress_ptr compress_info, ClientData *client_data)
 {
-  register ssize_t
+  ssize_t
     i;
 
   for (i = 0; i < (ssize_t) client_data->markers_count; i++)
@@ -715,8 +722,8 @@ static boolean WriteJpeg(j_decompress_ptr decompress_info, ClientData *client_da
   destination = (DestinationManager *) NULL;
   if (setjmp(client_data->error_recovery) != 0)
   {
-    if (destination != (DestinationManager *) NULL && destination->outputFile != (FILE *) NULL)
-      fclose(destination->outputFile);
+    if (destination != (DestinationManager *) NULL)
+      CloseDestinationFile(destination);
     jpeg_destroy_compress(&compress_info);
     return FALSE;
   }
@@ -748,7 +755,7 @@ static boolean WriteJpeg(j_decompress_ptr decompress_info, ClientData *client_da
 
 static void TerminateClientData(ClientData *client_data)
 {
-  register ssize_t
+  ssize_t
     i;
 
   for (i = 0; i < (ssize_t) client_data->markers_count; i++)

@@ -1,14 +1,5 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 
 #include "Stdafx.h"
 #include "MagickExceptionHelper.h"
@@ -33,36 +24,59 @@ MAGICK_NATIVE_EXPORT void MagickExceptionHelper_Dispose(ExceptionInfo *instance)
   DestroyExceptionInfo(instance);
 }
 
-MAGICK_NATIVE_EXPORT const ExceptionInfo *MagickExceptionHelper_Related(const ExceptionInfo *instance, const size_t idx)
+MAGICK_NATIVE_EXPORT const ExceptionInfo *MagickExceptionHelper_Related(const ExceptionInfo *instance, const size_t index)
 {
   const ExceptionInfo
     *p,
     *q;
 
+  LinkedListInfo
+    *exceptions;
+
   size_t
-    count,
-    index;
+    count;
+
+  ssize_t
+    i,
+    j,
+    length;
 
   count = 0;
-  if (instance->exceptions == (void *)NULL)
-    return (ExceptionInfo *)NULL;
+  exceptions = (LinkedListInfo *) instance->exceptions;
+  if (exceptions == (LinkedListInfo *) NULL)
+    return (ExceptionInfo *) NULL;
 
-  q = instance;
-  index = GetNumberOfElementsInLinkedList((LinkedListInfo *)instance->exceptions);
-  while (index > 0)
+  length = (ssize_t) GetNumberOfElementsInLinkedList(exceptions);
+  for (i = 0; i < length; i++)
   {
-    p = (const ExceptionInfo *)GetValueFromLinkedList((LinkedListInfo *)instance->exceptions, --index);
-    if (AreExceptionsEqual(p, q) == MagickFalse)
+    MagickBooleanType
+      found;
+
+    p = (const ExceptionInfo *) GetValueFromLinkedList(exceptions, i);
+    found = AreExceptionsEqual(p, instance);
+    if (found != MagickFalse)
+      continue;
+
+    for (j = 0; j < i; j++)
     {
-      if (count == idx)
+      q = (const ExceptionInfo *) GetValueFromLinkedList(exceptions, j);
+      if (AreExceptionsEqual(p, q) != MagickFalse)
+      {
+        found = MagickTrue;
+        break;
+      }
+    }
+
+    if (found == MagickFalse)
+    {
+      if (count == index)
         return p;
 
-      q = p;
       count++;
     }
   }
 
-  return (ExceptionInfo *)NULL;
+  return (ExceptionInfo *) NULL;
 }
 
 MAGICK_NATIVE_EXPORT size_t MagickExceptionHelper_RelatedCount(const ExceptionInfo *instance)
@@ -71,24 +85,45 @@ MAGICK_NATIVE_EXPORT size_t MagickExceptionHelper_RelatedCount(const ExceptionIn
     *p,
     *q;
 
+  LinkedListInfo
+    *exceptions;
+
   size_t
-    count,
-    index;
+    count;
+
+  ssize_t
+    i,
+    j,
+    length;
 
   count = 0;
-  if (instance->exceptions == (void *)NULL)
+  exceptions = (LinkedListInfo *) instance->exceptions;
+  if (exceptions == (LinkedListInfo *) NULL)
     return count;
 
-  q = instance;
-  index = GetNumberOfElementsInLinkedList((LinkedListInfo *)instance->exceptions);
-  while (index > 0)
+  length = (ssize_t) GetNumberOfElementsInLinkedList(exceptions);
+  for (i = 0; i < length; i++)
   {
-    p = (const ExceptionInfo *)GetValueFromLinkedList((LinkedListInfo *)instance->exceptions, --index);
-    if (AreExceptionsEqual(p, q) == MagickFalse)
+    MagickBooleanType
+      found;
+
+    p = (const ExceptionInfo *) GetValueFromLinkedList(exceptions, i);
+    found = AreExceptionsEqual(p, instance);
+    if (found != MagickFalse)
+      continue;
+
+    for (j = 0; j < i; j++)
     {
-      q = p;
-      count++;
+      q = (const ExceptionInfo *) GetValueFromLinkedList(exceptions, j);
+      if (AreExceptionsEqual(p, q) != MagickFalse)
+      {
+        found = MagickTrue;
+        break;
+      }
     }
+
+    if (found == MagickFalse)
+      count++;
   }
 
   return count;

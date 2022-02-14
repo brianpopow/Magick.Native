@@ -10,9 +10,13 @@ SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 . $SCRIPT_PATH/settings.sh
 
 $1/build.zlib.sh
+$1/build.liblzma.sh
+$1/build.bzlib.sh
+$1/build.libzip.sh
 $1/build.libxml.sh
 $1/build.libpng.sh
 $1/build.freetype.sh
+moveFromLib64
 $1/build.fontconfig.sh
 $1/build.libjpeg-turbo.sh
 moveFromLib64
@@ -37,3 +41,9 @@ $1/build.harfbuzz.sh
 $1/build.pango.sh
 $1/build.croco.sh
 $1/build.librsvg.sh
+$1/build.raqm.sh
+$1/build.highway.sh
+$1/build.brotli.sh
+moveFromLib64
+$1/build.jpeg-xl.sh
+moveFromLib64

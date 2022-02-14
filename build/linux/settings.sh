@@ -9,8 +9,14 @@ export CONDITIONAL_DISABLE_SHARED=""
 export PKG_PATH="/usr/local/lib/pkgconfig"
 export SIMD_OPTIONS="-DWITH_SIMD=1"
 export SSE_OPTIONS=""
+
+export FFI_OPTIONS=""
 export FONTCONFIG_OPTIONS=""
+export GLIB_OPTIONS=""
 export LIBXML_OPTIONS=""
+export OPENEXR_OPTIONS=""
 export WEBP_OPTIONS="--enable-libwebpmux --enable-libwebpdemux"
-export IMAGEMAGICK_OPTIONS=""
+
+export IMAGEMAGICK_OPTIONS="--disable-openmp"
+
 export CROSS_COMPILE_FLAGS="--host=x86_64-pc-linux-gnu"

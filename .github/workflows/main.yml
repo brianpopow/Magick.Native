@@ -1,12 +1,12 @@
 on:
   push:
     branches:
-    - master
+    - main
   pull_request:
     branches:
-    - master
+    - main
 
-name: master
+name: main
 jobs:
   linux:
     name: 'Linux'
@@ -26,7 +26,7 @@ jobs:
       working-directory: build/linux
 
     - name: Clone ImageMagick libraries
-      run: ./checkout.sh linux
+      run: ./checkout.sh linux ../../../artifacts
       working-directory: src/ImageMagick
 
     - name: Build libraries
@@ -51,6 +51,49 @@ jobs:
         name: linux
         path: artifacts
 
+  linux_openmp:
+    name: 'Linux OpenMP'
+    container:
+      image: ubuntu:16.04
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+
+    - name: Install dependencies
+      run: ./install.dependencies.sh
+      working-directory: build/linux-openmp
+
+    - name: Clone ImageMagick libraries
+      run: ./checkout.sh linux ../../../artifacts
+      working-directory: src/ImageMagick
+
+    - name: Build libraries
+      run: ../../../build/linux-openmp/build.libraries.sh ../../../build/libraries
+      working-directory: src/ImageMagick/libraries
+
+    - name: Build ImageMagick
+      run: ../../../build/linux-openmp/build.ImageMagick.sh
+      working-directory: src/ImageMagick/libraries
+
+    - name: Build Native
+      run: ../../build/linux-openmp/build.Native.sh
+      working-directory: src/Magick.Native
+
+    - name: Copy Native
+      run: ../../build/linux-openmp/copy.Native.sh ../../artifacts
+      working-directory: src/Magick.Native
+
+    - name: Upload library
+      uses: actions/upload-artifact@v1
+      with:
+        name: linux-openmp
+        path: artifacts
+
   linux_musl:
     name: 'Linux musl'
     container:
@@ -69,7 +112,7 @@ jobs:
       working-directory: build/linux-musl
 
     - name: Clone ImageMagick libraries
-      run: ./checkout.sh linux
+      run: ./checkout.sh linux ../../../artifacts
       working-directory: src/ImageMagick
 
     - name: Build libraries
@@ -96,7 +139,7 @@ jobs:
 
   macos:
     name: 'MacOS'
-    runs-on: macos-latest
+    runs-on: macos-11
 
     steps:
 
@@ -110,7 +153,7 @@ jobs:
       working-directory: build/macos
 
     - name: Clone ImageMagick libraries
-      run: ./checkout.sh macos
+      run: ./checkout.sh macos ../../../artifacts
       working-directory: src/ImageMagick
 
     - name: Build libraries
@@ -137,12 +180,12 @@ jobs:
 
   windows:
     name: 'Windows'
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     strategy:
       matrix:
         quantumName: [Q8, Q8-OpenMP, Q16, Q16-OpenMP, Q16-HDRI, Q16-HDRI-OpenMP]
-        platformName: [x86, x64]
+        platformName: [x86, x64, arm64]
         exclude:
         - quantumName: Q8-OpenMP
           platformName: x86
@@ -163,7 +206,7 @@ jobs:
       working-directory: build/windows
 
     - name: Clone ImageMagick libraries
-      run: ./checkout.cmd
+      run: ./checkout.cmd ../../../artifacts/windows
       working-directory: src/ImageMagick
 
     - name: Build ImageMagick
@@ -200,39 +243,10 @@ jobs:
         name: resources
         path: artifacts/resources
 
-  metadata:
-    name: 'Metadata'
-    runs-on: windows-latest
-
-    steps:
-
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-
-    - name: Install dependencies
-      run: ./install.dependencies.ps1
-      working-directory: build/windows
-
-    - name: Clone ImageMagick libraries
-      run: ./checkout.cmd
-      working-directory: src/ImageMagick
-
-    - name: Create metadata
-      run: ./create.metadata.ps1 -destination ../../artifacts
-      working-directory: build/metadata
-
-    - name: Upload metadata
-      uses: actions/upload-artifact@v1
-      with:
-        name: metadata
-        path: artifacts
-
   wasm:
     name: 'WASM'
     container:
-      image: emscripten/emsdk:2.0.0
+      image: emscripten/emsdk:3.1.0
     runs-on: ubuntu-latest
 
     steps:
@@ -247,7 +261,7 @@ jobs:
       working-directory: build/wasm
 
     - name: Clone ImageMagick libraries
-      run: ./checkout.sh linux
+      run: ./checkout.sh wasm ../../../artifacts
       working-directory: src/ImageMagick
 
     - name: Apply patches
@@ -280,6 +294,35 @@ jobs:
         name: wasm
         path: artifacts
 
+  metadata:
+    name: 'Metadata'
+    runs-on: windows-latest
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+
+    - name: Install dependencies
+      run: ./install.dependencies.ps1
+      working-directory: build/windows
+
+    - name: Clone ImageMagick libraries
+      run: ./checkout.cmd
+      working-directory: src/ImageMagick
+
+    - name: Create metadata
+      run: ./create.metadata.ps1 -destination ../../artifacts
+      working-directory: build/metadata
+
+    - name: Upload metadata
+      uses: actions/upload-artifact@v1
+      with:
+        name: metadata
+        path: artifacts
+
   verify_linux:
     name: 'Verify Linux'
     needs:
@@ -290,15 +333,13 @@ jobs:
       matrix:
         image:
           - 'ubuntu:16.04'
-          - 'ubuntu:16.10'
           - 'ubuntu:18.04'
           - 'ubuntu:20.04'
           - 'ubuntu:latest'
-          - 'centos:7'
-          - 'centos:8'
-          - 'centos:latest'
-          - 'microsoft/dotnet:2.0-runtime'
-          - 'mcr.microsoft.com/dotnet/core/runtime:3.1'
+          - 'tgagor/centos:stream8'
+          - 'tgagor/centos:stream9'
+          - 'mcr.microsoft.com/dotnet/aspnet:latest'
+          - 'mcr.microsoft.com/dotnet/runtime:3.1'
           - 'mcr.microsoft.com/dotnet/runtime:latest'
 
     container:
@@ -319,6 +360,43 @@ jobs:
     - name: Verify Native
       run: build/linux/verify.Native.sh .
 
+  verify_linux_openmp:
+    name: 'Verify Linux OpenMP'
+    needs:
+      - linux_openmp
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        image:
+          - 'ubuntu:16.04'
+          - 'ubuntu:18.04'
+          - 'ubuntu:20.04'
+          - 'ubuntu:latest'
+          - 'tgagor/centos:stream8'
+          - 'tgagor/centos:stream9'
+          - 'mcr.microsoft.com/dotnet/aspnet:latest'
+          - 'mcr.microsoft.com/dotnet/runtime:3.1'
+          - 'mcr.microsoft.com/dotnet/runtime:latest'
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+
+    - name: Download linux library
+      uses: actions/download-artifact@v2
+      with:
+        name: linux-openmp
+
+    - name: Verify Native
+      run: build/linux-openmp/verify.Native.sh .
+
   verify_linux_musl:
     name: 'Verify Linux musl'
     needs:
@@ -329,7 +407,8 @@ jobs:
       matrix:
         image:
           - 'alpine:latest'
-          - 'mcr.microsoft.com/dotnet/core/runtime:3.1-alpine'
+          - 'mcr.microsoft.com/dotnet/aspnet:5.0-alpine'
+          - 'mcr.microsoft.com/dotnet/runtime:3.1-alpine'
           - 'mcr.microsoft.com/dotnet/runtime:5.0-alpine'
 
     container:
@@ -354,6 +433,7 @@ jobs:
     name: 'Publish .NET library'
     needs:
       - verify_linux
+      - verify_linux_openmp
       - verify_linux_musl
       - macos
       - windows
@@ -375,6 +455,12 @@ jobs:
       uses: actions/download-artifact@v1
       with:
         name: linux
+        path: publish\dotnet\files\linux
+
+    - name: Download linux OpenMP library
+      uses: actions/download-artifact@v1
+      with:
+        name: linux-openmp
         path: publish\dotnet\files\linux
 
     - name: Download linux musl library
@@ -412,6 +498,7 @@ jobs:
       working-directory: publish/dotnet
 
     - name: Upload NuGet package
+      if: github.event_name != 'pull_request'
       working-directory: publish/dotnet
       run: |
         dotnet tool install gpr -g
@@ -441,12 +528,19 @@ jobs:
         name: wasm
         path: publish\wasm\files
 
+    - uses: actions/setup-node@v1
+      with:
+        node-version: 12
+        registry-url: https://npm.pkg.github.com
+        scope: '@dlemstra'
+
     - name: Create NPM package
       run: ./publish.ps1 -destination artifacts
       working-directory: publish/wasm
 
-    - name: Upload NPM package
-      uses: actions/upload-artifact@v1
-      with:
-        name: wasm-package
-        path: artifacts
+    - name: Publish NPM package
+      if: github.event_name != 'pull_request'
+      run: npm publish
+      working-directory: publish/wasm/files
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

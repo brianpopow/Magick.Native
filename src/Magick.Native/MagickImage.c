@@ -1,14 +1,5 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 
 #include "Stdafx.h"
 #include "MagickImage.h"
@@ -183,10 +174,10 @@ MAGICK_NATIVE_EXPORT RectangleInfo *MagickImage_BoundingBox_Get(const Image *ins
   RectangleInfo
     *result;
 
-  MAGICK_NATIVE_GET_EXCEPTION;
   result = MagickRectangle_Create();
   if (result == (RectangleInfo *) NULL)
     return (RectangleInfo *) NULL;
+  MAGICK_NATIVE_GET_EXCEPTION;
   *result = GetImageBoundingBox(instance, exceptionInfo);
   MAGICK_NATIVE_SET_EXCEPTION;
   return result;
@@ -348,8 +339,14 @@ MAGICK_NATIVE_EXPORT size_t MagickImage_ColorType_Get(const Image *instance, Exc
 
 MAGICK_NATIVE_EXPORT void MagickImage_ColorType_Set(Image *instance, const size_t value, ExceptionInfo **exception)
 {
+  const ImageType
+    type = (const ImageType) value;
+
+  if (instance->type == type)
+    return;
+
   MAGICK_NATIVE_GET_EXCEPTION;
-  SetImageType(instance, (const ImageType) value, exceptionInfo);
+  SetImageType(instance, type, exceptionInfo);
   MAGICK_NATIVE_SET_EXCEPTION;
 }
 
@@ -613,9 +610,7 @@ MAGICK_NATIVE_EXPORT const char *MagickImage_Signature_Get(Image *instance, Exce
     *property;
 
   MAGICK_NATIVE_GET_EXCEPTION;
-  property = (const char *) NULL;
-  if (instance->taint == MagickFalse)
-    property = GetImageProperty(instance, "Signature", exceptionInfo);
+  property = GetImageProperty(instance, "Signature", exceptionInfo);
   if (property == (const char *) NULL)
   {
     SignatureImage(instance, exceptionInfo);
@@ -824,6 +819,17 @@ MAGICK_NATIVE_EXPORT void MagickImage_AutoThreshold(Image *instance, const AutoT
   MAGICK_NATIVE_GET_EXCEPTION;
   AutoThresholdImage(instance, method, exceptionInfo);
   MAGICK_NATIVE_SET_EXCEPTION;
+}
+
+MAGICK_NATIVE_EXPORT Image *MagickImage_BilateralBlur(const Image *instance, const size_t width, const size_t height, const double intensitySigma, const double spatialSigma, ExceptionInfo **exception)
+{
+  Image
+    *image;
+
+  MAGICK_NATIVE_GET_EXCEPTION;
+  image = BilateralBlurImage(instance, width, height, intensitySigma, spatialSigma, exceptionInfo);
+  MAGICK_NATIVE_SET_EXCEPTION;
+  return image;
 }
 
 MAGICK_NATIVE_EXPORT void MagickImage_BlackThreshold(Image *instance, const char *threshold, const size_t channels, ExceptionInfo **exception)
@@ -1197,13 +1203,19 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_Despeckle(const Image *instance, Excepti
   return image;
 }
 
-MAGICK_NATIVE_EXPORT const size_t MagickImage_DetermineColorType(const Image *instance, ExceptionInfo **exception)
+MAGICK_NATIVE_EXPORT const size_t MagickImage_DetermineColorType(Image *instance, ExceptionInfo **exception)
 {
   ImageType
     imageType;
 
   MAGICK_NATIVE_GET_EXCEPTION;
   imageType = IdentifyImageType(instance, exceptionInfo);
+  if (imageType == BilevelType || imageType == GrayscaleType)
+  {
+    SetImageColorspace(instance, GRAYColorspace, exceptionInfo);
+    instance->alpha_trait = UndefinedPixelTrait;
+    instance->type = imageType;
+  }
   MAGICK_NATIVE_SET_EXCEPTION;
   return imageType;
 }
@@ -1599,13 +1611,30 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_Implode(const Image *instance, const dou
   return image;
 }
 
-MAGICK_NATIVE_EXPORT Image *MagickImage_InterpolativeResize(const Image *instance, const size_t columns, const size_t rows, const size_t method, ExceptionInfo **exception)
+MAGICK_NATIVE_EXPORT Image *MagickImage_Integral(const Image *instance,ExceptionInfo **exception)
 {
   Image
     *image;
 
   MAGICK_NATIVE_GET_EXCEPTION;
-  image = InterpolativeResizeImage(instance, columns, rows, (const PixelInterpolateMethod) method, exceptionInfo);
+  image = IntegralImage(instance, exceptionInfo);
+  MAGICK_NATIVE_SET_EXCEPTION;
+  return image;
+}
+
+MAGICK_NATIVE_EXPORT Image *MagickImage_InterpolativeResize(const Image *instance, const char *geometry, const size_t method, ExceptionInfo **exception)
+{
+  Image
+    *image;
+
+  RectangleInfo
+    rectangle;
+
+  SetGeometry(instance, &rectangle);
+  ParseMetaGeometry(geometry, &rectangle.x, &rectangle.y, &rectangle.width, &rectangle.height);
+
+  MAGICK_NATIVE_GET_EXCEPTION;
+  image = InterpolativeResizeImage(instance, rectangle.width, rectangle.height, (const PixelInterpolateMethod) method, exceptionInfo);
   MAGICK_NATIVE_SET_EXCEPTION;
   return image;
 }
@@ -2352,6 +2381,13 @@ MAGICK_NATIVE_EXPORT void MagickImage_Solarize(Image *instance, const double fac
   MAGICK_NATIVE_SET_EXCEPTION;
 }
 
+MAGICK_NATIVE_EXPORT void MagickImage_SortPixels(Image *instance, ExceptionInfo **exception)
+{
+  MAGICK_NATIVE_GET_EXCEPTION;
+  SortImagePixels(instance, exceptionInfo);
+  MAGICK_NATIVE_SET_EXCEPTION;
+}
+
 MAGICK_NATIVE_EXPORT Image *MagickImage_Splice(const Image *instance, const RectangleInfo *geometry, ExceptionInfo **exception)
 {
   Image
@@ -2374,13 +2410,15 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_Statistic(const Image *instance, const s
   return image;
 }
 
-MAGICK_NATIVE_EXPORT ChannelStatistics *MagickImage_Statistics(Image *instance, ExceptionInfo **exception)
+MAGICK_NATIVE_EXPORT ChannelStatistics *MagickImage_Statistics(Image *instance, const size_t channels, ExceptionInfo **exception)
 {
   ChannelStatistics
     *result;
 
   MAGICK_NATIVE_GET_EXCEPTION;
+  SetChannelMask(instance, channels);
   result = GetImageStatistics(instance, exceptionInfo);
+  RestoreChannelMask(instance);
   MAGICK_NATIVE_SET_EXCEPTION;
   return result;
 }

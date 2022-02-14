@@ -21,5 +21,8 @@ ninja install
 if [ -d /usr/local/lib/x86_64-linux-gnu ]; then
   cp /usr/local/lib/x86_64-linux-gnu/*.a /usr/local/lib/
 fi
+if [ -d /usr/local/lib/x86_64-linux-gnu/pkgconfig ]; then
+  mv /usr/local/lib/x86_64-linux-gnu/pkgconfig/*.pc $PKG_PATH
+fi
 chmod 755 /usr/local/bin/glib-genmarshal
 chmod 755 /usr/local/bin/glib-mkenums

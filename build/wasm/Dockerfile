@@ -1,4 +1,4 @@
-FROM emscripten/emsdk:2.0.0
+FROM emscripten/emsdk:3.1.0
 
 RUN mkdir /build
 
@@ -8,7 +8,7 @@ RUN cd /build; ./install.dependencies.sh
 
 COPY src/ImageMagick /ImageMagick
 
-RUN cd /ImageMagick; ./checkout.sh linux
+RUN cd /ImageMagick; ./checkout.sh wasm
 
 RUN mkdir /build/patches
 

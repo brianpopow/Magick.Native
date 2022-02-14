@@ -1,14 +1,5 @@
-# Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-#
-# Licensed under the ImageMagick License (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-#
-#   https://www.imagemagick.org/script/license.php
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the
-# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-# either express or implied. See the License for the specific language governing permissions
-# and limitations under the License.
+# Copyright Dirk Lemstra https://github.com/dlemstra/Magick.NET.
+# Licensed under the Apache License, Version 2.0.
 
 param (
     [parameter(mandatory=$true)][string]$destination = $null
@@ -30,37 +21,20 @@ function getVersion($fileName, $start, $padding) {
 }
 
 function writeVersionFromResource($fileName, $libraryName, $resourceFile) {
-    $version = GetVersion $resourceFile "#define THIS_PROJECT_VERSION_STRING		""" 1
+    $version = getVersion $resourceFile "#define DELEGATE_VERSION_STRING """ 1
     if ($version -ne $null) {
         Add-Content $fileName "- $libraryName $version"
     } else {
         Write-Error "Unable to get version for: $libraryName"
     }
-}
-
-function writeVersionFromLibraryVersion($fileName, $libraryName, $versionFile) {
-    $version = [System.IO.File]::ReadAllLines($versionFile).Trim()
-    if ($version -ne $null) {
-        Add-Content $fileName "- $libraryName $version"
-    } else {
-        Write-Error "Unable to get version for: $libraryName"
-    }
-}
-
-function writeCrocoVersion($fileName, $folder) {
-    $version = GetVersion "$folder\src\libcroco-config.h" "#define LIBCROCO_VERSION """ 1
-    Add-Content $fileName "- croco $version"
-}
-
-function writeFfiVersion($fileName, $folder) {
-    $version = GetVersion "$folder\configure.ac" "AC_INIT([libffi], [" 45
-    Add-Content $fileName "- ffi $version"
 }
 
 function writeImageMagickVersion($fileName, $folder) {
-    $packageVersion = GetVersion "$folder\version.sh" "PACKAGE_VERSION='" 1
-    $packageRelease = GetVersion "$folder\version.sh" "PACKAGE_RELEASE=""" 1
-    $version = "$packageVersion-$packageRelease"
+    $major = getVersion "$folder\m4\version.m4" "m4_define([magick_major_version], [" 2
+    $minor = getVersion "$folder\m4\version.m4" "m4_define([magick_minor_version], [" 2
+    $micro = getVersion "$folder\m4\version.m4" "m4_define([magick_micro_version], [" 2
+    $patchlevel = getVersion "$folder\m4\version.m4" "m4_define([magick_patchlevel_version], [" 2
+    $version = "$major.$minor.$micro-$patchlevel"
 
     $current = Get-Location
     Set-Location $folder
@@ -69,14 +43,13 @@ function writeImageMagickVersion($fileName, $folder) {
     if ($tag.Length -eq 0) {
         $version = "$version beta"
     }
+    & cmd /c 'git log -1 --format=%ci > date.txt 2> nul & exit 0'
+    $date = [IO.File]::ReadAllText("$folder\date.txt").Trim()
+    $date = $date.Split(" ")[0]
+
     Set-Location $current
 
-    Add-Content $fileName "- ImageMagick $version"
-}
-
-function writePixmanVersion($fileName, $folder) {
-    $version = GetVersion "$folder\pixman\pixman-version.h" "#define PIXMAN_VERSION_STRING """ 1
-    Add-Content $fileName "- pixman $version"
+    Add-Content $fileName "- ImageMagick $version ($date)"
 }
 
 function writeLibraryVersions($folders) {
@@ -91,19 +64,14 @@ function writeLibraryVersions($folders) {
 
         $folder = "$sourceDir/$libraryName"
 
-        $resourceFile = Get-ChildItem -Path $folder -Filter "Resource.rc" -Recurse
+        $resourceFile = Get-ChildItem -Path $folder -Filter "ImageMagick.version.h" -Recurse
         if ($resourceFile -ne $null) {
             writeVersionFromResource $fileName $libraryName $resourceFile.FullName
         } else {
-            $versionFile = Get-ChildItem -Path $folder -Filter "LibraryVersion.txt" -Recurse
-            if ($versionFile -ne $null) {
-                writeVersionFromLibraryVersion $fileName $libraryName $versionFile.FullName
-            } else {
-                switch($libraryName) {
-                    "ImageMagick" { writeImageMagickVersion $fileName $folder }
-                    "VisualMagick" { }
-                    default { Write-Error "Unable to get version for: $library" }
-                }
+            switch($libraryName) {
+                "ImageMagick" { writeImageMagickVersion $fileName $folder }
+                "VisualMagick" { }
+                default { Write-Error "Unable to get version for: $library" }
             }
         }
     }

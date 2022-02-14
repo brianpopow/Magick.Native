@@ -1,14 +1,5 @@
-# Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-#
-# Licensed under the ImageMagick License (the "License"); you may not use this file except in
-# compliance with the License. You may obtain a copy of the License at
-#
-#   https://www.imagemagick.org/script/license.php
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the
-# License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-# either express or implied. See the License for the specific language governing permissions
-# and limitations under the License.
+# Copyright Dirk Lemstra https://github.com/dlemstra/Magick.NET.
+# Licensed under the Apache License, Version 2.0.
 
 param (
     [string]$config = "Release",
@@ -38,7 +29,7 @@ function createSolution($configureOptions) {
     $path = fullPath "src\ImageMagick\libraries\VisualMagick\configure"
     Set-Location $path
 
-    $options = "/smt /noWizard /VS2019 $configureOptions"
+    $options = "/smt /noWizard /VS2022 $configureOptions"
     Write-Host "Options: $configureOptions"
     Start-Process .\configure.exe -ArgumentList $options -wait
 
@@ -54,7 +45,11 @@ function copyIncludes($folder) {
     [void](New-Item -ItemType directory -Path "$destination\MagickWand")
     Copy-Item "$source\ImageMagick\MagickWand\*.h" "$destination\MagickWand"
     [void](New-Item -ItemType directory -Path "$destination\jpeg")
-    Copy-Item "$source\jpeg\*.h" "$destination\jpeg"
+    Copy-Item "$source\jpeg-turbo\*.h" "$destination\jpeg"
+    [void](New-Item -ItemType directory -Path "$destination\coders")
+    Copy-Item "$source\ImageMagick\coders\*-private.h" "$destination\coders"
+    [void](New-Item -ItemType directory -Path "$destination\CL")
+    Copy-Item "$source\VisualMagick\OpenCL\CL\*.h" "$destination\CL"
 }
 
 function copyResources($folder) {
@@ -78,8 +73,10 @@ function copyLibraries($config, $folder) {
     [void](New-Item -ItemType directory -Path $destination)
     if ($config -eq "Debug") {
         Copy-Item "$source\*DB*.lib" $destination
+        Copy-Item "$source\*DB*.pdb" $destination
     } else {
         Copy-Item "$source\*RL*.lib" $destination
+        Copy-Item "$source\*RL*.pdb" $destination
     }
 }
 
@@ -98,9 +95,7 @@ function getConfigureOptions($name, $platformName, $quantum) {
     if ($name -inotmatch "-OpenMP") {
         $options = "$options /noOpenMP"
     }
-    if ($platformName -eq "x64") {
-        $options = "$options /x64"
-    }
+    $options = "$options /$platformName"
 
     return $options;
 }
@@ -115,18 +110,13 @@ function buildImageMagick($config, $name, $platformName) {
     createSolution $configureOptions
     patchMagickBaseConfig $name $platformName
 
-    $platform = "Win32"
-    if ($platformName -eq "x64") {
-        $platform = "x64";
-    }
-
-    $options = "Configuration=$config,Platform=$($platform),PlatformToolset=v142,VCBuildAdditionalOptions=/#arch:SSE"
+    $options = "Configuration=$config,Platform=$($platformName),VCBuildAdditionalOptions=/#arch:SSE"
     build "src\ImageMagick\libraries\VisualMagick\VisualStaticMT.sln" $options
     copyOutput $config $name $platformName
 }
 
 function buildConfigure() {
-    build "src\ImageMagick\libraries\VisualMagick\configure\configure.sln" "Configuration=Release,Platform=Win32,PlatformToolset=v142"
+    build "src\ImageMagick\libraries\VisualMagick\configure\configure.2022.sln" "Configuration=Release,Platform=x64"
 }
 
 buildConfigure

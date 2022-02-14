@@ -1,14 +1,5 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 
 #include "Stdafx.h"
 #include "MagickRectangle.h"
@@ -18,9 +9,9 @@ MAGICK_NATIVE_EXPORT RectangleInfo *MagickRectangle_Create(void)
   RectangleInfo
     *rectangle_info;
 
-  rectangle_info = (RectangleInfo *)AcquireMagickMemory(sizeof(*rectangle_info));
-  if (rectangle_info == (RectangleInfo *)NULL)
-    return (RectangleInfo *)NULL;
+  rectangle_info = (RectangleInfo *) AcquireMagickMemory(sizeof(*rectangle_info));
+  if (rectangle_info == (RectangleInfo *) NULL)
+    return (RectangleInfo *) NULL;
   ResetMagickMemory(rectangle_info, 0, sizeof(*rectangle_info));
   return rectangle_info;
 }
@@ -70,7 +61,27 @@ MAGICK_NATIVE_EXPORT void MagickRectangle_Height_Set(RectangleInfo *instance, co
   instance->height = value;
 }
 
-MAGICK_NATIVE_EXPORT void MagickRectangle_Initialize(RectangleInfo *instance, const char *value)
+MAGICK_NATIVE_EXPORT RectangleInfo *MagickRectangle_FromPageSize(const char *page_size)
 {
-  GetGeometry(value, &instance->x, &instance->y, &instance->width, &instance->height);
+  char
+    *geometry;
+
+  MagickStatusType
+    flags;
+
+  RectangleInfo
+    *rectangle_info;
+
+  rectangle_info = MagickRectangle_Create();
+  if (rectangle_info == (RectangleInfo *) NULL)
+    return (RectangleInfo *) NULL;
+  geometry = GetPageGeometry(page_size);
+  flags = ParseAbsoluteGeometry(geometry, rectangle_info);
+  geometry = DestroyString(geometry);
+  if (((flags & WidthValue) == 0) || ((flags & HeightValue) == 0))
+  {
+    MagickRectangle_Dispose(rectangle_info);
+    return (RectangleInfo *) NULL;
+  }
+  return rectangle_info;
 }

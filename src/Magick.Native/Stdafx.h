@@ -1,28 +1,22 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 #pragma once
 
 #if defined(MAGICK_NATIVE_WASM)
   #define MAGICK_NATIVE_LINUX
 #endif
 
-#if defined(MAGICK_NATIVE_LINUX) || defined(MAGICK_NATIVE_MACOS)
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <MagickCore/MagickCore.h>
+#include <MagickCore/studio.h>
+#include <MagickCore/utility-private.h>
+#include <MagickCore/string-private.h>
+#include <MagickCore/delegate-private.h>
 #include <MagickWand/MagickWand.h>
-#include <unistd.h>
+#include <coders/ghostscript-private.h>
 
-extern MagickPrivate ssize_t
-  GetMagickPageSize(void);
+#if defined(MAGICK_NATIVE_LINUX) || defined(MAGICK_NATIVE_MACOS)
 
 #if defined(MAGICK_NATIVE_WASM)
   #include <emscripten.h>
@@ -32,23 +26,10 @@ extern MagickPrivate ssize_t
 #endif
 
 #else
-
 #define _LIB
 
 #pragma warning(disable : 4710)
 #pragma warning(disable : 4711)
-#pragma warning(disable : 4820)
-
-#pragma warning(push)
-#pragma warning(disable : 4255)
-#pragma warning(disable : 4668)
-#pragma warning(disable : 4996)
-
-#include <MagickCore/MagickCore.h>
-#include <MagickWand/MagickWand.h>
-#include <MagickCore/utility-private.h>
-
-#pragma warning(pop)
 
 #define MAGICK_NATIVE_STRINGIFY(s) #s
 #if defined(_DEBUG)
@@ -101,7 +82,13 @@ MAGICK_NATIVE_LINK_LIB("jp2")
 #endif
 
 #if defined(MAGICKCORE_JPEG_DELEGATE)
-MAGICK_NATIVE_LINK_LIB("jpeg")
+MAGICK_NATIVE_LINK_LIB("jpeg-turbo")
+#endif
+
+#if defined(MAGICKCORE_JXL_DELEGATE)
+MAGICK_NATIVE_LINK_LIB("highway")
+MAGICK_NATIVE_LINK_LIB("brotli")
+MAGICK_NATIVE_LINK_LIB("jpeg-xl")
 #endif
 
 #if defined(MAGICKCORE_LCMS_DELEGATE)
@@ -110,10 +97,6 @@ MAGICK_NATIVE_LINK_LIB("lcms")
 
 #if defined(MAGICKCORE_LIBOPENJP2_DELEGATE)
 MAGICK_NATIVE_LINK_LIB("openjpeg")
-#endif
-
-#if defined(MAGICKCORE_LIBZIP_DELEGATE)
-MAGICK_NATIVE_LINK_LIB("libzip")
 #endif
 
 #if defined(MAGICKCORE_HEIC_DELEGATE)
@@ -150,6 +133,10 @@ MAGICK_NATIVE_LINK_LIB("pixman")
 MAGICK_NATIVE_LINK_LIB("png")
 #endif
 
+#if defined(MAGICKCORE_RAQM_DELEGATE)
+MAGICK_NATIVE_LINK_LIB("raqm")
+#endif
+
 #if defined(MAGICKCORE_RSVG_DELEGATE)
 MAGICK_NATIVE_LINK_LIB("croco")
 MAGICK_NATIVE_LINK_LIB("librsvg")
@@ -163,6 +150,10 @@ MAGICK_NATIVE_LINK_LIB("tiff")
 MAGICK_NATIVE_LINK_LIB("webp")
 #endif
 
+#if defined(MAGICKCORE_ZIP_DELEGATE)
+MAGICK_NATIVE_LINK_LIB("libzip")
+#endif
+
 #if defined(MAGICKCORE_ZLIB_DELEGATE)
 MAGICK_NATIVE_LINK_LIB("zlib")
 #endif
@@ -171,5 +162,4 @@ MAGICK_NATIVE_LINK_LIB("zlib")
 #pragma comment(lib, "urlmon.lib")
 #endif
 
-#include <string.h>
 #include "Exceptions/MagickExceptionHelper.h"

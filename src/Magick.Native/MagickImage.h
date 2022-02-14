@@ -1,14 +1,5 @@
-// Copyright 2013-2020 Dirk Lemstra <https://github.com/dlemstra/Magick.Native/>
-//
-// Licensed under the ImageMagick License (the "License"); you may not use this file except in
-// compliance with the License. You may obtain a copy of the License at
-//
-//   https://www.imagemagick.org/script/license.php
-//
-// Unless required by applicable law or agreed to in writing, software distributed under the
-// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-// either express or implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright Dirk Lemstra https://github.com/dlemstra/Magick.Native.
+// Licensed under the Apache License, Version 2.0.
 #pragma once
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Create(const ImageInfo *, ExceptionInfo **);
@@ -177,6 +168,8 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_AutoOrient(const Image *, ExceptionInfo 
 
 MAGICK_NATIVE_EXPORT void MagickImage_AutoThreshold(Image *, const AutoThresholdMethod, ExceptionInfo **);
 
+MAGICK_NATIVE_EXPORT Image *MagickImage_BilateralBlur(const Image *, const size_t, const size_t, const double, const double, ExceptionInfo **);
+
 MAGICK_NATIVE_EXPORT void MagickImage_BlackThreshold(Image *, const char *, const size_t, ExceptionInfo **);
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_BlueShift(const Image *, const double, ExceptionInfo **);
@@ -251,7 +244,7 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_Deskew(const Image *, const double, Exce
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Despeckle(const Image *, ExceptionInfo **);
 
-MAGICK_NATIVE_EXPORT const size_t MagickImage_DetermineColorType(const Image *, ExceptionInfo **);
+MAGICK_NATIVE_EXPORT const size_t MagickImage_DetermineColorType(Image *, ExceptionInfo **);
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Distort(const Image *, const size_t, const MagickBooleanType, const double *, const size_t, ExceptionInfo **);
 
@@ -333,7 +326,9 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_HoughLine(const Image *, const size_t, c
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Implode(const Image *, const double, const size_t, ExceptionInfo **);
 
-MAGICK_NATIVE_EXPORT Image *MagickImage_InterpolativeResize(const Image *, const size_t, const size_t, const size_t, ExceptionInfo **);
+MAGICK_NATIVE_EXPORT Image *MagickImage_Integral(const Image *image,ExceptionInfo **);
+
+MAGICK_NATIVE_EXPORT Image *MagickImage_InterpolativeResize(const Image *, const char *, const size_t, ExceptionInfo **);
 
 MAGICK_NATIVE_EXPORT void MagickImage_Kmeans(Image *, const size_t, const size_t, const double, ExceptionInfo **);
 
@@ -479,11 +474,13 @@ MAGICK_NATIVE_EXPORT Image *MagickImage_Sketch(Image *, const double, const doub
 
 MAGICK_NATIVE_EXPORT void MagickImage_Solarize(Image *, const double, ExceptionInfo **);
 
+MAGICK_NATIVE_EXPORT void MagickImage_SortPixels(Image *, ExceptionInfo **);
+
 MAGICK_NATIVE_EXPORT Image *MagickImage_Splice(const Image *, const RectangleInfo *, ExceptionInfo **);
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Statistic(const Image *, const size_t, const size_t, const size_t, ExceptionInfo **);
 
-MAGICK_NATIVE_EXPORT ChannelStatistics *MagickImage_Statistics(Image *, ExceptionInfo **);
+MAGICK_NATIVE_EXPORT ChannelStatistics *MagickImage_Statistics(Image *, const size_t channels, ExceptionInfo **);
 
 MAGICK_NATIVE_EXPORT Image *MagickImage_Stegano(const Image *, const Image *, ExceptionInfo **);
 
